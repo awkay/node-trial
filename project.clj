@@ -5,6 +5,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.931"]
+                 ;; IMPORTANT STEP 1: Make sure react is not coming from cljsjs ********************************************************************************
                  [org.omcljs/om "1.0.0-beta1" :exclusions [cljsjs/react cljsjs/react-dom]]
                  [fulcrologic/fulcro "1.0.0-beta10"]
                  [fulcrologic/fulcro-spec "1.0.0-beta9" :scope "test" :exclusions [org.omcljs/om fulcrologic/fulcro]]]
@@ -15,121 +16,52 @@
   :test-paths ["src/test"]
   :clean-targets ^{:protect false} ["target" "resources/public/js" "resources/private"]
 
-  ; Notes  on production build:
-  ; - The hot code reload stuff in the dev profile WILL BREAK ADV COMPILATION. So, make sure you
-  ; use `lein with-profile production cljsbuild once production` to build!
-  :cljsbuild {:builds [{:id           "production"
-                        :source-paths ["src/main"]
-                        :jar          true
-                        :compiler     {:asset-path    "js/prod"
-                                       :main          node-trial.client-main
-                                       :optimizations :advanced
-                                       :source-map    "resources/public/js/node_trial.js.map"
-                                       :output-dir    "resources/public/js/prod"
-                                       :output-to     "resources/public/js/node_trial.js"}}]}
+  :profiles {:dev {:source-paths ["src/dev" "src/main" "src/test" "src/cards"]
 
-  :profiles {:uberjar    {:main           node-trial.server-main
-                          :aot            :all
-                          :jar-exclusions [#"public/js/prod" #"com/google.*js$"]
-                          :prep-tasks     ["clean" ["clean"]
-                                           "compile" ["with-profile" "production" "cljsbuild" "once" "production"]]}
-             :production {}
-             :dev        {:source-paths ["src/dev" "src/main" "src/test" "src/cards"]
+                   :jvm-opts     ["-XX:-OmitStackTraceInFastThrow" "-client" "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
+                                  "-Xmx3g" "-Xms2g" "-XX:+UseConcMarkSweepGC" "-XX:+CMSClassUnloadingEnabled" "-Xverify:none"]
 
-                          :jvm-opts     ["-XX:-OmitStackTraceInFastThrow" "-client" "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
-                                         "-Xmx3g" "-Xms2g" "-XX:+UseConcMarkSweepGC" "-XX:+CMSClassUnloadingEnabled" "-Xverify:none"]
+                   :figwheel     {:css-dirs        ["resources/public/css"]
+                                  :validate-config false}
 
-                          :doo          {:build "automated-tests"
-                                         :paths {:karma "node_modules/karma/bin/karma"}}
+                   :cljsbuild    {:builds
+                                  [{:id           "cards"
+                                    :figwheel     {:devcards true}
+                                    :source-paths ["src/main" "src/cards"]
+                                    :compiler     {:asset-path           "js/cards"
+                                                   :main                 node-trial.cards
+                                                   :optimizations        :none
+                                                   :output-dir           "resources/public/js/cards"
+                                                   :output-to            "resources/public/js/cards.js"
+                                                   :preloads             [devtools.preload]
+                                                   ;; IMPORTANT STEP 2: Make the NPM react also act AS IF it were the cljsjs version ********************************************************************************
+                                                   :foreign-libs         [{:provides       ["cljsjs.react"]
+                                                                           :file           "node_modules/react/dist/react.js"
+                                                                           :global-exports {cljsjs.react React}}
+                                                                          {:provides       ["cljsjs.react.dom"]
+                                                                           :file           "node_modules/react-dom/dist/react-dom.js"
+                                                                           :global-exports {cljsjs.react.dom ReactDOM}}]
+                                                   ;; IMPORTANT STEP 3: Add in the correct NPM dependencies********************************************************************************
+                                                   :install-deps         true
+                                                   :npm-deps             {:react                             "15.5.4"
+                                                                          :react-dom                         "15.5.4"
+                                                                          :react-addons-css-transition-group "15.6.0"
+                                                                          "@blueprintjs/core"                "1.28.0"
+                                                                          }
+                                                   :parallel-build       true
+                                                   :source-map-timestamp true}}
+                                   ]}
 
-                          :figwheel     {:css-dirs ["resources/public/css"]
-                                         :validate-config false}
+                   :plugins      [[lein-cljsbuild "1.1.7"]
+                                  [lein-doo "0.1.7"]
+                                  [com.jakemccrary/lein-test-refresh "0.17.0"]]
 
-                          :test-refresh {:report       fulcro-spec.reporters.terminal/fulcro-report
-                                         :with-repl    true
-                                         :changes-only true}
-
-                          :cljsbuild    {:builds
-                                         [{:id           "dev"
-                                           :figwheel     {:on-jsload "cljs.user/mount"}
-                                           :source-paths ["src/dev" "src/main"]
-                                           :compiler     {:asset-path           "js/dev"
-                                                          :main                 cljs.user
-                                                          :optimizations        :none
-                                                          :output-dir           "resources/public/js/dev"
-                                                          :output-to            "resources/public/js/node_trial.js"
-                                                          :preloads             [devtools.preload]
-                                                          :foreign-libs         [{:provides       ["cljsjs.react"]
-                                                                                  :file           "node_modules/react/dist/react.js"
-                                                                                  :global-exports {cljsjs.react React}}
-                                                                                 {:provides       ["cljsjs.react.dom"]
-                                                                                  :file           "node_modules/react-dom/dist/react-dom.js"
-                                                                                  :global-exports {cljsjs.react.dom ReactDOM}}]
-                                                          :install-deps         true
-                                                          :npm-deps             {:react                             "15.5.4"
-                                                                                 :react-dom                         "15.5.4"
-                                                                                 :react-addons-css-transition-group "15.6.0"
-                                                                                 "@blueprintjs/core"                "1.28.0"
-                                                                                 }
-                                                          :parallel-build       true
-                                                          :source-map-timestamp true}}
-                                          {:id           "cards"
-                                           :figwheel     {:devcards true}
-                                           :source-paths ["src/main" "src/cards"]
-                                           :compiler     {:asset-path           "js/cards"
-                                                          :main                 node-trial.cards
-                                                          :optimizations        :none
-                                                          :output-dir           "resources/public/js/cards"
-                                                          :output-to            "resources/public/js/cards.js"
-                                                          :preloads             [devtools.preload]
-                                                          :foreign-libs         [{:provides       ["cljsjs.react"]
-                                                                                  :file           "node_modules/react/dist/react.js"
-                                                                                  :global-exports {cljsjs.react React}}
-                                                                                 {:provides       ["cljsjs.react.dom"]
-                                                                                  :file           "node_modules/react-dom/dist/react-dom.js"
-                                                                                  :global-exports {cljsjs.react.dom ReactDOM}}]
-                                                          :install-deps         true
-                                                          :npm-deps             {:react                             "15.5.4"
-                                                                                 :react-dom                         "15.5.4"
-                                                                                 :react-addons-css-transition-group "15.6.0"
-                                                                                 "@blueprintjs/core"                "1.28.0"
-                                                                                 }
-                                                          :parallel-build       true
-                                                          :source-map-timestamp true}}
-                                          {:id           "i18n" ;for gettext string extraction
-                                           :source-paths ["src/main"]
-                                           :compiler     {:asset-path    "i18n"
-                                                          :main          node-trial.client-main
-                                                          :optimizations :whitespace
-                                                          :output-dir    "i18n/tmp"
-                                                          :output-to     "i18n/i18n.js"}}
-                                          {:id           "test"
-                                           :source-paths ["src/test" "src/main"]
-                                           :figwheel     {:on-jsload "node-trial.client-test-main/client-tests"}
-                                           :compiler     {:asset-path    "js/test"
-                                                          :main          node-trial.client-test-main
-                                                          :optimizations :none
-                                                          :output-dir    "resources/public/js/test"
-                                                          :output-to     "resources/public/js/test/test.js"
-                                                          :preloads      [devtools.preload]}}
-                                          {:id           "automated-tests"
-                                           :source-paths ["src/test" "src/main"]
-                                           :compiler     {:asset-path    "js/ci"
-                                                          :main          node-trial.CI-runner
-                                                          :optimizations :none
-                                                          :output-dir    "resources/private/js/ci"
-                                                          :output-to     "resources/private/js/unit-tests.js"}}]}
-
-                          :plugins      [[lein-cljsbuild "1.1.7"]
-                                         [lein-doo "0.1.7"]
-                                         [com.jakemccrary/lein-test-refresh "0.17.0"]]
-
-                          :dependencies [[binaryage/devtools "0.9.4"]
-                                         [org.clojure/tools.namespace "0.3.0-alpha4"]
-                                         [org.clojure/tools.nrepl "0.2.13"]
-                                         [com.cemerick/piggieback "0.2.2"]
-                                         [lein-doo "0.1.7" :scope "test"]
-                                         [figwheel-sidecar "0.5.13" :exclusions [org.clojure/tools.reader]]
-                                         [devcards "0.2.3" :exclusions [cljsjs/react cljsjs/react-dom]]]
-                          :repl-options {:init-ns          user
-                                         :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
+                   :dependencies [[binaryage/devtools "0.9.4"]
+                                  [org.clojure/tools.namespace "0.3.0-alpha4"]
+                                  [org.clojure/tools.nrepl "0.2.13"]
+                                  [com.cemerick/piggieback "0.2.2"]
+                                  [lein-doo "0.1.7" :scope "test"]
+                                  [figwheel-sidecar "0.5.13" :exclusions [org.clojure/tools.reader]]
+                                  [devcards "0.2.3" :exclusions [cljsjs/react cljsjs/react-dom]]]
+                   :repl-options {:init-ns          user
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
