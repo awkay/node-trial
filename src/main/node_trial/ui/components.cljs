@@ -12,7 +12,7 @@
   (render [this]
     (let [{:keys [w h label]} (om/props this)
           label (or label (str w "x" h))]
-      (ui-spinner #js {:className "pt-small" :intent (.-Primary Intent)})
+      (ui-spinner #js {:className "pt-large" :intent (.-Primary Intent)})
       #_(dom/svg #js {:width w :height h}
           (dom/rect #js {:width w :height h :style #js {:fill        "rgb(200,200,200)"
                                                         :strokeWidth 2

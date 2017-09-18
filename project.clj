@@ -4,7 +4,7 @@
   :min-lein-version "2.7.0"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.908"]
+                 [org.clojure/clojurescript "1.9.931"]
                  [org.omcljs/om "1.0.0-beta1" :exclusions [cljsjs/react cljsjs/react-dom]]
                  [fulcrologic/fulcro "1.0.0-beta10"]
                  [fulcrologic/fulcro-spec "1.0.0-beta9" :scope "test" :exclusions [org.omcljs/om fulcrologic/fulcro]]]
@@ -42,7 +42,8 @@
                           :doo          {:build "automated-tests"
                                          :paths {:karma "node_modules/karma/bin/karma"}}
 
-                          :figwheel     {:css-dirs ["resources/public/css"]}
+                          :figwheel     {:css-dirs ["resources/public/css"]
+                                         :validate-config false}
 
                           :test-refresh {:report       fulcro-spec.reporters.terminal/fulcro-report
                                          :with-repl    true
@@ -50,7 +51,7 @@
 
                           :cljsbuild    {:builds
                                          [{:id           "dev"
-                                           ;:figwheel     {:on-jsload "cljs.user/mount"}
+                                           :figwheel     {:on-jsload "cljs.user/mount"}
                                            :source-paths ["src/dev" "src/main"]
                                            :compiler     {:asset-path           "js/dev"
                                                           :main                 cljs.user
@@ -58,8 +59,29 @@
                                                           :output-dir           "resources/public/js/dev"
                                                           :output-to            "resources/public/js/node_trial.js"
                                                           :preloads             [devtools.preload]
-                                                          :verbose              true
-                                                          :compiler-stats              true
+                                                          :foreign-libs         [{:provides       ["cljsjs.react"]
+                                                                                  :file           "node_modules/react/dist/react.js"
+                                                                                  :global-exports {cljsjs.react React}}
+                                                                                 {:provides       ["cljsjs.react.dom"]
+                                                                                  :file           "node_modules/react-dom/dist/react-dom.js"
+                                                                                  :global-exports {cljsjs.react.dom ReactDOM}}]
+                                                          :install-deps         true
+                                                          :npm-deps             {:react                             "15.5.4"
+                                                                                 :react-dom                         "15.5.4"
+                                                                                 :react-addons-css-transition-group "15.6.0"
+                                                                                 "@blueprintjs/core"                "1.28.0"
+                                                                                 }
+                                                          :parallel-build       true
+                                                          :source-map-timestamp true}}
+                                          {:id           "cards"
+                                           :figwheel     {:devcards true}
+                                           :source-paths ["src/main" "src/cards"]
+                                           :compiler     {:asset-path           "js/cards"
+                                                          :main                 node-trial.cards
+                                                          :optimizations        :none
+                                                          :output-dir           "resources/public/js/cards"
+                                                          :output-to            "resources/public/js/cards.js"
+                                                          :preloads             [devtools.preload]
                                                           :foreign-libs         [{:provides       ["cljsjs.react"]
                                                                                   :file           "node_modules/react/dist/react.js"
                                                                                   :global-exports {cljsjs.react React}}
@@ -96,24 +118,7 @@
                                                           :main          node-trial.CI-runner
                                                           :optimizations :none
                                                           :output-dir    "resources/private/js/ci"
-                                                          :output-to     "resources/private/js/unit-tests.js"}}
-                                          {:id           "cards"
-                                           :figwheel     {:devcards true}
-                                           :source-paths ["src/main" "src/cards"]
-                                           :compiler     {:asset-path           "js/cards"
-                                                          :main                 node-trial.cards
-                                                          :optimizations        :none
-                                                          :output-dir           "resources/public/js/cards"
-                                                          :output-to            "resources/public/js/cards.js"
-                                                          :preloads             [devtools.preload]
-                                                          :verbose              true
-                                                          :install-deps         true
-                                                          ;:npm-deps             {;:react                             "15.5.4"
-                                                          ;:react-dom                         "15.5.4"
-                                                          ;:react-addons-css-transition-group "15.6.0"
-                                                          ;"@blueprintjs/core"                "1.28.0"}
-                                                          ;:parallel-build       true
-                                                          :source-map-timestamp true}}]}
+                                                          :output-to     "resources/private/js/unit-tests.js"}}]}
 
                           :plugins      [[lein-cljsbuild "1.1.7"]
                                          [lein-doo "0.1.7"]
