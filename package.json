@@ -5,7 +5,13 @@
   "main": "index.js",
   "repository": "",
   "directories": {},
-  "dependencies": { },
+  "dependencies": {
+    "@blueprintjs/core": "^1.28.0",
+    "@cljs-oss/module-deps": "^1.1.1",
+    "react": "^15.5.4",
+    "react-addons-css-transition-group": "^15.6.0",
+    "react-dom": "^15.5.4"
+  },
   "devDependencies": {
     "karma": "^0.13.19",
     "karma-chrome-launcher": "^0.2.2",
