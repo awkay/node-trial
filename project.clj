@@ -5,6 +5,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.9.908"]
+                 [org.omcljs/om "1.0.0-beta1" :exclusions [cljsjs/react cljsjs/react-dom]]
                  [fulcrologic/fulcro "1.0.0-beta10"]
                  [fulcrologic/fulcro-spec "1.0.0-beta9" :scope "test" :exclusions [org.omcljs/om fulcrologic/fulcro]]]
 
@@ -35,8 +36,8 @@
              :production {}
              :dev        {:source-paths ["src/dev" "src/main" "src/test" "src/cards"]
 
-                          :jvm-opts     ["-XX:-OmitStackTraceInFastThrow" "-server" "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
-                                         "-Xmx3g" "-Xms1g" "-XX:+PrintGC" "-XX:+UseConcMarkSweepGC" "-XX:+CMSClassUnloadingEnabled" "-Xverify:none"]
+                          :jvm-opts     ["-XX:-OmitStackTraceInFastThrow" "-client" "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1"
+                                         "-Xmx3g" "-Xms2g" "-XX:+UseConcMarkSweepGC" "-XX:+CMSClassUnloadingEnabled" "-Xverify:none"]
 
                           :doo          {:build "automated-tests"
                                          :paths {:karma "node_modules/karma/bin/karma"}}
@@ -58,15 +59,19 @@
                                                           :output-to            "resources/public/js/node_trial.js"
                                                           :preloads             [devtools.preload]
                                                           :verbose              true
-                                                          ;;real    3m50.331s
-                                                          ;;user    4m17.755s
-                                                          ;;sys     0m5.507s
-
-                                                          ;:install-deps         true
-                                                          ;:npm-deps             {:react                             "15.5.4"
-                                                                                 ;:react-dom                         "15.5.4"
-                                                                                 ;:react-addons-css-transition-group "15.6.0"
-                                                                                 ;"@blueprintjs/core"                "1.28.0"}
+                                                          :compiler-stats              true
+                                                          :foreign-libs         [{:provides       ["cljsjs.react"]
+                                                                                  :file           "node_modules/react/dist/react.js"
+                                                                                  :global-exports {cljsjs.react React}}
+                                                                                 {:provides       ["cljsjs.react.dom"]
+                                                                                  :file           "node_modules/react-dom/dist/react-dom.js"
+                                                                                  :global-exports {cljsjs.react.dom ReactDOM}}]
+                                                          :install-deps         true
+                                                          :npm-deps             {:react                             "15.5.4"
+                                                                                 :react-dom                         "15.5.4"
+                                                                                 :react-addons-css-transition-group "15.6.0"
+                                                                                 "@blueprintjs/core"                "1.28.0"
+                                                                                 }
                                                           :parallel-build       true
                                                           :source-map-timestamp true}}
                                           {:id           "i18n" ;for gettext string extraction
@@ -104,9 +109,9 @@
                                                           :verbose              true
                                                           :install-deps         true
                                                           ;:npm-deps             {;:react                             "15.5.4"
-                                                                                 ;:react-dom                         "15.5.4"
-                                                                                 ;:react-addons-css-transition-group "15.6.0"
-                                                                                 ;"@blueprintjs/core"                "1.28.0"}
+                                                          ;:react-dom                         "15.5.4"
+                                                          ;:react-addons-css-transition-group "15.6.0"
+                                                          ;"@blueprintjs/core"                "1.28.0"}
                                                           ;:parallel-build       true
                                                           :source-map-timestamp true}}]}
 
